@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victron Control</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            background-color: #333; /* Dunkelgrau */
+            color: #fff; /* Weißer Text für allgemeine Labels */
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .message-container {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+        }
+        .green-text {
+            color: #00FF00; /* Grün wie auf alten Monitoren */
+        }
+    </style>
+</head>
+<body>
+    <h1>Victron Control</h1>
+
+    <div class="message-container">
+        <label>Batterieladung:</label> 
+        <span id="mqttMessageSOC" class="green-text">Warten auf Nachricht...</span> 
+        <span class="green-text">%</span>
+    </div>
+    
+    <div class="message-container">
+        <label>PV-Leistung:</label> 
+        <span id="mqttMessagePower" class="green-text">Warten auf Nachricht...</span> 
+        <span class="green-text">W</span>
+    </div>
+
+    <div class="message-container">
+        <label>Hausverbrauch:</label> 
+        <span id="mqttMessageVerbrauch" class="green-text">Warten auf Nachricht...</span> 
+        <span class="green-text">W</span>
+    </div>
+
+    <div class="message-container">
+        <label>Heutiger Ertrag:</label> 
+        <span id="mqttMessageErtrag" class="green-text">Warten auf Nachricht...</span> 
+        <span class="green-text">kWh</span>
+    </div>
+        
+    <div class="message-container">
+        <label>Puffertemperatur:</label> 
+        <span id="mqttMessagePuffertemperatur" class="green-text">Warten auf Nachricht...</span> 
+        <span class="green-text">°C</span>
+    </div>
+
+    <div class="message-container">
+        <label>Status:</label> 
+        <span id="mqttMessageStatus" class="green-text">Warten auf Nachricht...</span>
+    </div>
+
+    <script>
+        // Verbindung zum MQTT-Broker herstellen
+        const client = mqtt.connect('ws://broker.mqttdashboard.com:8000/mqtt');
+
+        // MQTT-Topics
+        const topics = {
+            ertrag: 'resuahnitram/victron/ertrag',
+            soc: 'resuahnitram/victron/soc',
+            power: 'resuahnitram/victron/power',
+            puffertemperatur: 'resuahnitram/victron/puffertemperatur',
+            status: 'resuahnitram/victron/status',
+            verbrauch: 'resuahnitram/victron/verbrauch'
+        };
+
+        // Event: Wenn die Verbindung hergestellt wurde
+        client.on('connect', function () {
+            console.log('Verbunden mit MQTT Broker');
+            Object.values(topics).forEach(function (topic) {
+                client.subscribe(topic, function (err) {
+                    if (!err) {
+                        console.log('Abonniert: ' + topic);
+                    } else {
+                        console.log('Fehler beim Abonnieren: ', err);
+                    }
+                });
+            });
+        });
+
+        // Event: Wenn eine Nachricht empfangen wird
+        client.on('message', function (topic, message) {
+            switch (topic) {
+                case topics.ertrag:
+                    document.getElementById('mqttMessageErtrag').textContent = message.toString();
+                    break;
+                case topics.soc:
+                    document.getElementById('mqttMessageSOC').textContent = message.toString();
+                    break;
+                case topics.power:
+                    document.getElementById('mqttMessagePower').textContent = message.toString();
+                    break;
+                case topics.puffertemperatur:
+                    document.getElementById('mqttMessagePuffertemperatur').textContent = message.toString();
+                    break;
+                case topics.status:
+                    document.getElementById('mqttMessageStatus').textContent = message.toString();
+                    break;
+                case topics.verbrauch:
+                    document.getElementById('mqttMessageVerbrauch').textContent = message.toString();
+                    break;
+            }
+        });
+
+        // Event: Wenn die Verbindung unterbrochen wurde
+        client.on('close', function () {
+            console.log('Verbindung geschlossen');
+        });
+    </script>
+</body>
+</html>
+
